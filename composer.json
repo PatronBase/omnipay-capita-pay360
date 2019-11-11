@@ -1,0 +1,45 @@
+{
+    "name": "patronbase/omnipay-capita-pay360",
+    "type": "library",
+    "description": "Capita Pay360 driver for the Omnipay payment processing library",
+    "keywords": [
+        "gateway",
+        "merchant",
+        "omnipay",
+        "pay",
+        "payment",
+        "capita",
+        "pay360",
+        "pay 360",
+        "redirect"
+    ],
+    "homepage": "https://github.com/PatronBase/omnipay-capita-pay360",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ian Shephard",
+            "email": "ian@patronbase.com"
+        },
+        {
+            "name": "Leith Caldwell",
+            "email": "leith@codedruids.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": { "Omnipay\\CapitaPay360\\" : "src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "Omnipay\\CapitaPay360\\" : "tests/" }
+    },
+    "require": {
+        "omnipay/common": "~2.0"
+    },
+    "require-dev": {
+        "omnipay/tests": "~2.0"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.0.x-dev"
+        }
+    }
+}
