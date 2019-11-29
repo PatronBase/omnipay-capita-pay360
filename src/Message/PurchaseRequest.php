@@ -88,30 +88,6 @@ class PurchaseRequest extends AbstractRequest
         $key = base64_decode($this->getHmacKey());
         $hash = hash_hmac('sha256', $credentialsToHash, $key, true);
         $digest = base64_encode($hash);
-        
-        // Create items array to return
-        $saleItems = array();
-        $items = $this->getItems();
-        if ($items) {
-            foreach ($items as $itemIndex => $item) {
-                $saleItems[] = array(
-                    'itemSummary' => array(
-                        'description' => substr($item->getName(), 0, 100),
-                        'amountInMinorUnits' => (int) round(
-                            $item->getQuantity() * $item->getPrice() * pow(10, $this->getCurrencyDecimalPlaces())
-                        ),
-                        'reference' => $item->getReference(),
-                    ),
-                    'quantity' => $item->getQuantity(),
-                    'lgItemDetails' => array(
-                        'additionalReference' => $item->getAdditionalReference(),
-                        'fundCode' => $item->getFundCode(),
-                        'narrative' => $item->getNarrative(),
-                    ),
-                    'lineId' => $itemIndex + 1
-                );
-            }
-        }
 
         $data = array(
             'credentials' => array(
@@ -140,7 +116,6 @@ class PurchaseRequest extends AbstractRequest
             ),
             'panEntryMethod' => 'ECOM',
             'sale' => array(
-                'items' => $saleItems,
                 'saleSummary' => array(
                     'description' => substr($this->getDescription(), 0, 100),
                     'amountInMinorUnits' => $this->getAmountInteger()
@@ -148,21 +123,52 @@ class PurchaseRequest extends AbstractRequest
             )
         );
 
+        // Create items array to return
+        $items = $this->getItems();
+        if ($items) {
+            $saleItems = array();
+            foreach ($items as $itemIndex => $item) {
+                $reference = $item->getReference();
+                $additionalReference = $item->getAdditionalReference();
+                $fundCode = $item->getFundCode();
+                $narrative = $item->getNarrative();
+                $lgItemDetails = ($additionalReference ? array('additionalReference' => $additionalReference) : array())
+                    + ($fundCode ? array('fundCode' => $fundCode) : array())
+                    + ($narrative ? array('narrative' => $narrative) : array());
+                $saleItems[] = array(
+                    'itemSummary' => array(
+                        'description' => substr($item->getName(), 0, 100),
+                        'amountInMinorUnits' => (int) round(
+                            $item->getQuantity() * $item->getPrice() * pow(10, $this->getCurrencyDecimalPlaces())
+                        ),
+                    ) + ($reference ? array('reference' => $reference) : array()),
+                    'quantity' => $item->getQuantity(),
+                    'lineId' => $itemIndex + 1
+                ) + ($lgItemDetails ? array('lgItemDetails' => $lgItemDetails) : array());
+            }
+            // only supply item detail if there are any items
+            $data['sale']['items'] = $saleItems;
+        }
+
         // add card holder details if available
         $card = $this->getCard();
         if ($card) {
-            $data['billing'] = array(
-                'cardHolderDetails' => array(
-                    'cardHolderName' => $card->getName(),
-                    'address' => array(
-                        'address1' => $card->getAddress1(),
-                        'address2' => $card->getAddress2(),
-                        'address3' => $card->getCity(),
-                        'country' => $card->getCountry(),
-                        'postcode' => $card->getPostcode(),
-                    )
-                )
-            );
+            $name = $card->getName();
+            $address1 = $card->getAddress1();
+            $address2 = $card->getAddress2();
+            $address3 = $card->getCity();
+            $country = $card->getCountry();
+            $postcode = $card->getPostcode();
+            $address = ($address1 ? array('address1' => $address1) : array())
+                + ($address2 ? array('address2' => $address2) : array())
+                + ($address3 ? array('address3' => $address3) : array())
+                + ($country ? array('country' => $country) : array())
+                + ($postcode ? array('postcode' => $postcode) : array());
+            $cardHolderDetails = ($name ? array('cardHolderName' => $name) : array())
+                + ($address ? array('address' => $address) : array());
+            if ($cardHolderDetails) {
+                $data['billing'] = array('cardHolderDetails' => $cardHolderDetails);
+            }
         }
 
         return $data;
