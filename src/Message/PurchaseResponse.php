@@ -3,11 +3,12 @@
 namespace Omnipay\CapitaPay360\Message;
 
 use Omnipay\Common\Message\AbstractResponse;
+use Omnipay\Common\Message\RedirectResponseInterface;
 
 /**
  * CapitaPay360 Purchase Response
  */
-class PurchaseResponse extends AbstractResponse
+class PurchaseResponse extends AbstractResponse implements RedirectResponseInterface
 {
     public function isSuccessful()
     {
