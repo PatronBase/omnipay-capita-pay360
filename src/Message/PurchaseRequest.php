@@ -123,18 +123,55 @@ class PurchaseRequest extends AbstractRequest
             )
         );
 
+        // add card holder details if available
+        $card = $this->getCard();
+        if ($card) {
+            $address = array_filter(array(
+                'address1' => substr($card->getAddress1(), 0, 50),
+                'address2' => substr($card->getAddress2(), 0, 50),
+                'address3' => substr($card->getAddress3(), 0, 50),
+                'address4' => substr($card->getCity(), 0, 50),
+                'county' => substr($card->getState(), 0, 50),
+                'country' => substr($card->getCountry(), 0, 50),
+                'postcode' => substr($card->getPostcode(), 0, 10),
+            ));
+            $cardHolderDetails = array_filter(array(
+                'cardHolderName' => $card->getName(),
+                'address' => $address,
+            ));
+            if ($cardHolderDetails) {
+                $data['billing'] = array('cardHolderDetails' => $cardHolderDetails);
+            }
+        }
+
         // Create items array to return
         $items = $this->getItems();
         if ($items) {
             $saleItems = array();
+            $itemContactDetails = array();
+            // assumption: contact details for each item are the same as the purchaser, not set individually
+            if ($card) {
+                $accountName = array_filter(array(
+                    'title' => $card->getTitle(),
+                    'forename' => $card->getFirstName(),
+                    'surname' => $card->getLastName(),
+                ));
+                $contact = array_filter(array(
+                    'email' => $card->getEmail(),
+                ));
+                $itemContactDetails += array_filter(array(
+                    'accountName' => $accountName,
+                    'accountAddress' => $address,
+                    'contact' => $contact,
+                ));
+            }
             foreach ($items as $itemIndex => $item) {
                 $reference = $item->getReference();
-                $additionalReference = $item->getAdditionalReference();
-                $fundCode = $item->getFundCode();
-                $narrative = $item->getNarrative();
-                $lgItemDetails = ($additionalReference ? array('additionalReference' => $additionalReference) : array())
-                    + ($fundCode ? array('fundCode' => $fundCode) : array())
-                    + ($narrative ? array('narrative' => $narrative) : array());
+                $lgItemDetails = array_filter($itemContactDetails + array(
+                    'additionalReference' => $item->getAdditionalReference(),
+                    'fundCode' => $item->getFundCode(),
+                    'narrative' => $item->getNarrative(),
+                ));
                 $saleItems[] = array(
                     'itemSummary' => array(
                         'description' => substr($item->getName(), 0, 100),
@@ -150,32 +187,13 @@ class PurchaseRequest extends AbstractRequest
             $data['sale']['items'] = $saleItems;
         }
 
-        // add card holder details if available
-        $card = $this->getCard();
-        if ($card) {
-            $name = $card->getName();
-            $address1 = $card->getAddress1();
-            $address2 = $card->getAddress2();
-            $address3 = $card->getCity();
-            $country = $card->getCountry();
-            $postcode = $card->getPostcode();
-            $address = ($address1 ? array('address1' => $address1) : array())
-                + ($address2 ? array('address2' => $address2) : array())
-                + ($address3 ? array('address3' => $address3) : array())
-                + ($country ? array('country' => $country) : array())
-                + ($postcode ? array('postcode' => $postcode) : array());
-            $cardHolderDetails = ($name ? array('cardHolderName' => $name) : array())
-                + ($address ? array('address' => $address) : array());
-            if ($cardHolderDetails) {
-                $data['billing'] = array('cardHolderDetails' => $cardHolderDetails);
-            }
-        }
-
         return $data;
     }
 
     public function sendData($data)
     {
+        // workaround so that SoapClient doesn't add 'id' attributes and references on identical nodes (e.g. address)
+        $data = unserialize(serialize($data));
         $responseData = $this->getSoapClient()->scpSimpleInvoke($data);
 
         return $this->response = new PurchaseResponse($this, $responseData);

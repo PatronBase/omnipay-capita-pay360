@@ -132,7 +132,8 @@ class PurchaseRequestTest extends TestCase
                 'card' => array(
                     'name' => 'Joanne Smith',
                     'address1' => '123 Nowhere Street',
-                    'address2' => 'Suburbia',
+                    'address2' => 'Special Subdivision',
+                    'address3' => 'Suburbia',
                     'city' => 'Tinytown',
                     'country' => 'United Kingdom',
                     'postcode' => 'NR99 1AN',
@@ -145,10 +146,65 @@ class PurchaseRequestTest extends TestCase
         $this->assertTrue($this->request->getCard() instanceof CreditCard);
         $this->assertSame('Joanne Smith', $data['billing']['cardHolderDetails']['cardHolderName']);
         $this->assertSame('123 Nowhere Street', $data['billing']['cardHolderDetails']['address']['address1']);
-        $this->assertSame('Suburbia', $data['billing']['cardHolderDetails']['address']['address2']);
-        $this->assertSame('Tinytown', $data['billing']['cardHolderDetails']['address']['address3']);
+        $this->assertSame('Special Subdivision', $data['billing']['cardHolderDetails']['address']['address2']);
+        $this->assertSame('Suburbia', $data['billing']['cardHolderDetails']['address']['address3']);
+        $this->assertSame('Tinytown', $data['billing']['cardHolderDetails']['address']['address4']);
         $this->assertSame('United Kingdom', $data['billing']['cardHolderDetails']['address']['country']);
         $this->assertSame('NR99 1AN', $data['billing']['cardHolderDetails']['address']['postcode']);
+    }
+
+    public function testGetDataWithCardAndItem()
+    {
+        // override some data
+        $this->options = array_merge(
+            $this->options,
+            array(
+                'card' => array(
+                    'name' => 'Joanne Smith',
+                    'email' => 'joanne.smith@example.com',
+                    'address1' => '123 Nowhere Street',
+                    'address2' => 'Special Subdivision',
+                    'address3' => 'Suburbia',
+                    'city' => 'Tinytown',
+                    'country' => 'United Kingdom',
+                    'postcode' => 'NR99 1AN',
+                ),
+                'items' => array(
+                    array(
+                        'name' => 'Donation',
+                        'description' => 'Fundraiser',
+                        'quantity' => '1',
+                        'price' => '99.50',
+                        'reference' => '1200/BHL00///BAR///',
+                        'additionalReference' => '9876ZYX',
+                        'fundCode' => '12345',
+                        'narrative' => 'Smith donation to Fundraiser on sale 9876ZYX'
+                    ),
+                    array(
+                        'name' => 'Fees',
+                        'description' => 'Processing fees',
+                        'quantity' => '3',
+                        'price' => '0.15',
+                        'reference' => '1200/BHL00///BAR///',
+                        'additionalReference' => '9876ZYX',
+                        'fundCode' => '67890',
+                        'narrative' => 'Smith processing fee on sale 9876ZYX'
+                    ),
+                )
+            )
+        );
+        $this->request->initialize($this->options);
+        $data = $this->request->getData();
+
+        $this->assertSame('Joanne', $data['sale']['items'][0]['lgItemDetails']['accountName']['forename']);
+        $this->assertSame('Smith', $data['sale']['items'][0]['lgItemDetails']['accountName']['surname']);
+        $this->assertSame('123 Nowhere Street', $data['sale']['items'][0]['lgItemDetails']['accountAddress']['address1']);
+        $this->assertSame('Special Subdivision', $data['sale']['items'][0]['lgItemDetails']['accountAddress']['address2']);
+        $this->assertSame('Suburbia', $data['sale']['items'][0]['lgItemDetails']['accountAddress']['address3']);
+        $this->assertSame('Tinytown', $data['sale']['items'][0]['lgItemDetails']['accountAddress']['address4']);
+        $this->assertSame('United Kingdom', $data['sale']['items'][0]['lgItemDetails']['accountAddress']['country']);
+        $this->assertSame('NR99 1AN', $data['sale']['items'][0]['lgItemDetails']['accountAddress']['postcode']);
+        $this->assertSame('joanne.smith@example.com', $data['sale']['items'][0]['lgItemDetails']['contact']['email']);
     }
 
     public function testSend()
