@@ -16,7 +16,7 @@ class CompletePurchaseResponse extends AbstractResponse
      */
     public function isSuccessful()
     {
-        return $this->data->paymentResult->status == 'SUCCESS';
+        return $this->data->transactionState == 'COMPLETE' && $this->data->paymentResult->status == 'SUCCESS';
     }
 
     /**
@@ -36,7 +36,15 @@ class CompletePurchaseResponse extends AbstractResponse
      */
     public function getMessage()
     {
-        return $this->isSuccessful() ? null : $this->data->paymentResult->errorDetails->errorMessage;
+        if ($this->isSuccessful())
+        {
+            return null;
+        }
+        if (isset($this->data->paymentResult->errorDetails->errorMessage))
+        {
+            return $this->data->paymentResult->errorDetails->errorMessage;
+        }
+        return $this->data->transactionState;
     }
 
     /**

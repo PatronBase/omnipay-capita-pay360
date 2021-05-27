@@ -89,4 +89,21 @@ class CompletePurchaseResponseTest extends TestCase
         $this->assertNull($this->response->getCardExpiry());
         $this->assertNull($this->response->getCardNumber());
     }
+
+    public function testCompletePurchaseError()
+    {
+        $responseData = (object) array(
+            'requestId' => '123456789',
+            'scpReference' => '',
+            'transactionState' => 'INVALID_REFERENCE',
+        );
+        $this->response = new CompletePurchaseResponse($this->getMockRequest(), $responseData);
+
+        $this->assertFalse($this->response->isSuccessful());
+        $this->assertNull($this->response->getTransactionReference());
+        $this->assertSame('INVALID_REFERENCE', $this->response->getMessage());
+        $this->assertNull($this->response->getCardBrand());
+        $this->assertNull($this->response->getCardExpiry());
+        $this->assertNull($this->response->getCardNumber());
+    }
 }
