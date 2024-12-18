@@ -32,7 +32,7 @@
         "psr-4": { "Omnipay\\CapitaPay360\\" : "tests/" }
     },
     "require": {
-        "omnipay/common": "dev-address3-support"
+        "omnipay/common": "~3.3"
     },
     "require-dev": {
         "omnipay/tests": "dev-address3-support",
@@ -41,16 +41,12 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/CodeDruids/omnipay-common"
-        },
-        {
-            "type": "vcs",
             "url": "https://github.com/CodeDruids/omnipay-tests"
         }
     ],
     "extra": {
         "branch-alias": {
-            "dev-master": "3.1.x-dev"
+            "dev-master": "3.2.x-dev"
         }
     },
     "prefer-stable": true
